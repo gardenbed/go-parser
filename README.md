@@ -1,3 +1,8 @@
+[![Go Doc][godoc-image]][godoc-url]
+[![Build Status][workflow-image]][workflow-url]
+[![Go Report Card][goreport-image]][goreport-url]
+[![Test Coverage][codecov-image]][codecov-url]
+
 # go-parser
 
 This repo provides an abstraction and an implementation for a Go parser.
@@ -54,3 +59,13 @@ func FilePost(*parser.File, *ast.File) error {
   return nil
 }
 ```
+
+
+[godoc-url]: https://pkg.go.dev/github.com/gardenbed/go-parser
+[godoc-image]: https://pkg.go.dev/badge/github.com/gardenbed/go-parser
+[workflow-url]: https://github.com/gardenbed/go-parser/actions
+[workflow-image]: https://github.com/gardenbed/go-parser/workflows/Go/badge.svg
+[goreport-url]: https://goreportcard.com/report/github.com/gardenbed/go-parser
+[goreport-image]: https://goreportcard.com/badge/github.com/gardenbed/go-parser
+[codecov-url]: https://codecov.io/gh/gardenbed/go-parser
+[codecov-image]: https://codecov.io/gh/gardenbed/go-parser/branch/main/graph/badge.svg

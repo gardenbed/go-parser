@@ -1,0 +1,7 @@
+version: "1.0"
+
+project:
+  language: go
+  profile: generic
+  release:
+    mode: direct

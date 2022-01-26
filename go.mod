@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/gardenbed/charm v0.1.3
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/tools v0.1.8
+	golang.org/x/tools v0.1.9
 )
 
 require (

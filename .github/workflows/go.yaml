@@ -21,7 +21,7 @@ jobs:
         with:
           codecov_token: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload Test Report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: coverage-report
           path: ${{ steps.test.outputs.coverage_report_file }}

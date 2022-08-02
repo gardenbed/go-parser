@@ -1,6 +1,6 @@
 module github.com/gardenbed/go-parser
 
-go 1.18
+go 1.19
 
 require (
 	github.com/gardenbed/charm v0.1.3

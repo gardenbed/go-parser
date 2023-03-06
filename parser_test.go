@@ -209,7 +209,7 @@ func TestParser_Parse(t *testing.T) {
 			name:          "InvalidCode",
 			packages:      "./test/invalid_code",
 			opts:          ParseOptions{},
-			expectedError: "test/invalid_code/main.go:3:11: expected 'STRING', found newline (and 1 more errors)",
+			expectedError: "test/invalid_code/main.go:3:11: missing import path (and 10 more errors)",
 		},
 		{
 			name: "Success_SkipPackages",

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,7 +72,7 @@ func visitPackagesRecursively(includeSubs bool, basePath, relPath string, visit 
 
 	// Then, visit all packages inside the current package
 	if includeSubs {
-		files, err := ioutil.ReadDir(filepath.Join(basePath, relPath))
+		files, err := os.ReadDir(filepath.Join(basePath, relPath))
 		if err != nil {
 			return err
 		}

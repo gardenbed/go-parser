@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -37,7 +36,7 @@ func WriteFile(path string, fset *token.FileSet, file *ast.File) error {
 
 	if err != nil {
 		// Write a log file for debugging purposes
-		_ = ioutil.WriteFile(getDebugFilename(path), buf.Bytes(), 0644)
+		_ = os.WriteFile(getDebugFilename(path), buf.Bytes(), 0644)
 		return fmt.Errorf("goimports error: %s", err)
 	}
 

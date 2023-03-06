@@ -26,7 +26,8 @@ func InferName(expr ast.Expr) string {
 	case *ast.ArrayType:
 		return InferName(v.Elt) + "Vals"
 	case *ast.MapType:
-		return InferName(v.Key) + strings.Title(InferName(v.Value)) + "Map"
+		name := strings.Title(InferName(v.Value)) // nolint directives: SA1019
+		return InferName(v.Key) + name + "Map"
 	case *ast.ChanType:
 		return InferName(v.Value) + "Ch"
 	case *ast.StructType:

@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/gardenbed/charm v0.1.3
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	golang.org/x/tools v0.9.1
 )
 

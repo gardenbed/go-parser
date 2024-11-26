@@ -1,10 +1,10 @@
 module github.com/gardenbed/go-parser
 
-go 1.22.2
+go 1.23.3
 
 require (
-	github.com/gardenbed/charm v0.1.3
-	github.com/stretchr/testify v1.9.0
+	github.com/gardenbed/charm v0.1.4
+	github.com/stretchr/testify v1.10.0
 	golang.org/x/tools v0.24.0
 )
 

@@ -42,7 +42,7 @@ func main() {
   }
 }
 
-func Package(*parser.Package, *ast.Package) bool {
+func Package(*parser.Package, string) bool {
   return true
 }
 

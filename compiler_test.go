@@ -2,8 +2,9 @@ package parser
 
 import (
 	"errors"
-	"go/ast"
 	"testing"
+
+	goast "go/ast"
 
 	"github.com/gardenbed/charm/ui"
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestCompiler_Compile(t *testing.T) {
 			consumers: []*Consumer{
 				{
 					Name:    "tester",
-					Package: func(*Package, *ast.Package) bool { return false },
+					Package: func(*Package, string) bool { return false },
 				},
 			},
 			packages: "./test/valid/...",
@@ -61,8 +62,8 @@ func TestCompiler_Compile(t *testing.T) {
 			consumers: []*Consumer{
 				{
 					Name:    "tester",
-					Package: func(*Package, *ast.Package) bool { return true },
-					FilePre: func(*File, *ast.File) bool { return false },
+					Package: func(*Package, string) bool { return true },
+					FilePre: func(*File, *goast.File) bool { return false },
 				},
 			},
 			packages: "./test/valid/...",
@@ -76,14 +77,14 @@ func TestCompiler_Compile(t *testing.T) {
 			consumers: []*Consumer{
 				{
 					Name:      "tester",
-					Package:   func(*Package, *ast.Package) bool { return true },
-					FilePre:   func(*File, *ast.File) bool { return true },
-					Import:    func(*File, *ast.ImportSpec) {},
-					Struct:    func(*Type, *ast.StructType) {},
-					Interface: func(*Type, *ast.InterfaceType) {},
-					FuncType:  func(*Type, *ast.FuncType) {},
-					FuncDecl:  func(*Func, *ast.FuncType, *ast.BlockStmt) {},
-					FilePost:  func(*File, *ast.File) error { return nil },
+					Package:   func(*Package, string) bool { return true },
+					FilePre:   func(*File, *goast.File) bool { return true },
+					Import:    func(*File, *goast.ImportSpec) {},
+					Struct:    func(*Type, *goast.StructType) {},
+					Interface: func(*Type, *goast.InterfaceType) {},
+					FuncType:  func(*Type, *goast.FuncType) {},
+					FuncDecl:  func(*Func, *goast.FuncType, *goast.BlockStmt) {},
+					FilePost:  func(*File, *goast.File) error { return nil },
 				},
 			},
 			packages: "./test/valid/...",
@@ -97,14 +98,14 @@ func TestCompiler_Compile(t *testing.T) {
 			consumers: []*Consumer{
 				{
 					Name:      "tester",
-					Package:   func(*Package, *ast.Package) bool { return true },
-					FilePre:   func(*File, *ast.File) bool { return true },
-					Import:    func(*File, *ast.ImportSpec) {},
-					Struct:    func(*Type, *ast.StructType) {},
-					Interface: func(*Type, *ast.InterfaceType) {},
-					FuncType:  func(*Type, *ast.FuncType) {},
-					FuncDecl:  func(*Func, *ast.FuncType, *ast.BlockStmt) {},
-					FilePost:  func(*File, *ast.File) error { return errors.New("file error") },
+					Package:   func(*Package, string) bool { return true },
+					FilePre:   func(*File, *goast.File) bool { return true },
+					Import:    func(*File, *goast.ImportSpec) {},
+					Struct:    func(*Type, *goast.StructType) {},
+					Interface: func(*Type, *goast.InterfaceType) {},
+					FuncType:  func(*Type, *goast.FuncType) {},
+					FuncDecl:  func(*Func, *goast.FuncType, *goast.BlockStmt) {},
+					FilePost:  func(*File, *goast.File) error { return errors.New("file error") },
 				},
 			},
 			packages: "./test/valid/...",

@@ -68,7 +68,7 @@ func (f *Func) IsMethod() bool {
 // This is meant to be provided by downstream packages.
 type Consumer struct {
 	Name      string
-	Package   func(*Package, *goast.Package) bool
+	Package   func(*Package, string) bool
 	FilePre   func(*File, *goast.File) bool
 	Import    func(*File, *goast.ImportSpec)
 	Struct    func(*Type, *goast.StructType)
@@ -89,9 +89,8 @@ type TypeFilter struct {
 
 // ParseOptions configure how Go source code files should be parsed.
 type ParseOptions struct {
-	MergePackageFiles bool
-	SkipTestFiles     bool
-	TypeFilter        TypeFilter
+	SkipTestFiles bool
+	TypeFilter    TypeFilter
 }
 
 // matchType determines if a type is matching the provided options.
@@ -121,28 +120,26 @@ type parser struct {
 	consumers []*Consumer
 }
 
-// Parse parses all Go source code files recursively in the given packages.
-func (p *parser) Parse(packages string, opts ParseOptions) error {
-	var includeSubs bool
-	var path string
-
-	if strings.HasSuffix(packages, "/...") {
-		includeSubs, path = true, strings.TrimSuffix(packages, "/...")
-	} else {
-		includeSubs, path = false, packages
+// Parse processes all Go source code files in the specified path.
+// If the path ends with "/...", all subdirectories will be considered too.
+func (p *parser) Parse(path string, opts ParseOptions) error {
+	subDirs := strings.HasSuffix(path, "/...")
+	if subDirs {
+		path = strings.TrimSuffix(path, "/...")
 	}
 
-	// Verify the path
 	info, err := os.Stat(path)
 	if err != nil {
 		return err
 	}
 
 	if !info.IsDir() {
-		return fmt.Errorf("%q is not a package", path)
+		return fmt.Errorf("%q is not a directory", path)
 	}
 
 	p.ui.Infof(ui.White, "Parsing ...")
+
+	fset := gotoken.NewFileSet()
 
 	module, err := getModuleName(path)
 	if err != nil {
@@ -153,23 +150,41 @@ func (p *parser) Parse(packages string, opts ParseOptions) error {
 		Name: module,
 	}
 
-	// Create a new file set for each package
-	fset := gotoken.NewFileSet()
-
-	return visitPackages(includeSubs, path, func(basePath, relPath string) error {
-		pkgDir := filepath.Join(basePath, relPath)
+	return visitPackages(subDirs, path, func(basePath, relPath string) error {
+		absDir := filepath.Join(basePath, relPath)
 		importPath := filepath.Join(module, relPath)
 
-		// Parse all Go packages and files in the currecnt directory
-		p.ui.Debugf(ui.Cyan, "  Parsing directory: %s", pkgDir)
-		pkgs, err := goparser.ParseDir(fset, pkgDir, nil, goparser.AllErrors)
+		p.ui.Debugf(ui.Cyan, "  Parsing directory: %s", absDir)
+
+		entries, err := os.ReadDir(absDir)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error on reading directory %s: %s", absDir, err)
 		}
 
-		// Visit all parsed Go files in the current directory
-		for pkgName, pkg := range pkgs {
-			p.ui.Debugf(ui.Magenta, "    Package: %s", pkg.Name)
+		// Parse all Go files in the current directory and build a map of package names to parsed files.
+		files := make(map[string]map[string]*goast.File)
+		for _, e := range entries {
+			if e.IsDir() || !strings.HasSuffix(e.Name(), ".go") {
+				continue
+			}
+
+			filename := filepath.Join(absDir, e.Name())
+
+			file, err := goparser.ParseFile(fset, filename, nil, goparser.SkipObjectResolution|goparser.AllErrors)
+			if err != nil {
+				return err
+			}
+
+			pkgName := file.Name.Name
+			if _, ok := files[pkgName]; !ok {
+				files[pkgName] = make(map[string]*goast.File)
+			}
+			files[pkgName][filename] = file
+		}
+
+		// Visit all parsed Go files in each package
+		for pkgName, pkgFiles := range files {
+			p.ui.Debugf(ui.Magenta, "    Package: %s", pkgName)
 
 			pkgInfo := Package{
 				Module:      moduleInfo,
@@ -185,7 +200,7 @@ func (p *parser) Parse(packages string, opts ParseOptions) error {
 			// PACKAGE
 			for _, c := range p.consumers {
 				if c.Package != nil {
-					cont := c.Package(&pkgInfo, pkg)
+					cont := c.Package(&pkgInfo, pkgName)
 					if cont {
 						fileConsumers = append(fileConsumers, c)
 					}
@@ -198,21 +213,13 @@ func (p *parser) Parse(packages string, opts ParseOptions) error {
 				continue
 			}
 
-			// Merge all file ASTs in the package and process a single file
-			if opts.MergePackageFiles {
-				mergedFile := goast.MergePackageFiles(pkg, goast.FilterImportDuplicates|goast.FilterUnassociatedComments)
-				if err := p.processFile(pkgInfo, fset, "merged.go", mergedFile, fileConsumers, opts); err != nil {
-					return err
+			for filename, file := range pkgFiles {
+				if opts.SkipTestFiles && strings.HasSuffix(filename, "_test.go") {
+					continue
 				}
-			} else {
-				for fileName, file := range pkg.Files {
-					if opts.SkipTestFiles && strings.HasSuffix(fileName, "_test.go") {
-						continue
-					}
 
-					if err := p.processFile(pkgInfo, fset, fileName, file, fileConsumers, opts); err != nil {
-						return err
-					}
+				if err := p.processFile(pkgInfo, fset, filename, file, fileConsumers, opts); err != nil {
+					return err
 				}
 			}
 		}

@@ -18,7 +18,7 @@ func NewCompiler(ui ui.UI, consumers ...*Consumer) *Compiler {
 	}
 }
 
-// Compile parses all Go source code files in the given packages and generates new artifacts (source codes).
-func (c *Compiler) Compile(packages string, opts ParseOptions) error {
-	return c.parser.Parse(packages, opts)
+// Compile parses all Go source code files in a given path and generates new artifacts (source codes).
+func (c *Compiler) Compile(path string, opts ParseOptions) error {
+	return c.parser.Parse(path, opts)
 }

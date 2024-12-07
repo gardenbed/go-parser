@@ -2,9 +2,10 @@ package parser
 
 import (
 	"errors"
-	"go/ast"
 	"regexp"
 	"testing"
+
+	goast "go/ast"
 
 	"github.com/gardenbed/charm/ui"
 	"github.com/stretchr/testify/assert"
@@ -87,8 +88,8 @@ func TestFuncInfo_IsMethod(t *testing.T) {
 			name: "Method",
 			info: &Func{
 				RecvName: "Lookup",
-				RecvType: &ast.StarExpr{
-					X: &ast.Ident{Name: "service"},
+				RecvType: &goast.StarExpr{
+					X: &goast.Ident{Name: "service"},
 				},
 			},
 			expectedIsMethod: true,
@@ -108,13 +109,13 @@ func TestParseOptions_MatchType(t *testing.T) {
 	tests := []struct {
 		name            string
 		opts            ParseOptions
-		typeName        *ast.Ident
+		typeName        *goast.Ident
 		expectedMatched bool
 	}{
 		{
 			name:            "Matched_NoFilter",
 			opts:            ParseOptions{},
-			typeName:        &ast.Ident{Name: "Request"},
+			typeName:        &goast.Ident{Name: "Request"},
 			expectedMatched: true,
 		},
 		{
@@ -124,7 +125,7 @@ func TestParseOptions_MatchType(t *testing.T) {
 					Names: []string{"Response"},
 				},
 			},
-			typeName:        &ast.Ident{Name: "Response"},
+			typeName:        &goast.Ident{Name: "Response"},
 			expectedMatched: true,
 		},
 		{
@@ -134,7 +135,7 @@ func TestParseOptions_MatchType(t *testing.T) {
 					Regexp: regexp.MustCompile(`Service$`),
 				},
 			},
-			typeName:        &ast.Ident{Name: "ExampleService"},
+			typeName:        &goast.Ident{Name: "ExampleService"},
 			expectedMatched: true,
 		},
 		{
@@ -145,7 +146,7 @@ func TestParseOptions_MatchType(t *testing.T) {
 					Regexp: regexp.MustCompile(`Service$`),
 				},
 			},
-			typeName:        &ast.Ident{Name: "service"},
+			typeName:        &goast.Ident{Name: "service"},
 			expectedMatched: false,
 		},
 		{
@@ -155,7 +156,7 @@ func TestParseOptions_MatchType(t *testing.T) {
 					Exported: true,
 				},
 			},
-			typeName:        &ast.Ident{Name: "Client"},
+			typeName:        &goast.Ident{Name: "Client"},
 			expectedMatched: true,
 		},
 		{
@@ -165,7 +166,7 @@ func TestParseOptions_MatchType(t *testing.T) {
 					Exported: true,
 				},
 			},
-			typeName:        &ast.Ident{Name: "client"},
+			typeName:        &goast.Ident{Name: "client"},
 			expectedMatched: false,
 		},
 	}
@@ -197,7 +198,7 @@ func TestParser_Parse(t *testing.T) {
 			name:          "PathNotDirectory",
 			packages:      "./test/valid/main.go",
 			opts:          ParseOptions{},
-			expectedError: `"./test/valid/main.go" is not a package`,
+			expectedError: `"./test/valid/main.go" is not a directory`,
 		},
 		{
 			name:          "InvalidModule",
@@ -216,7 +217,7 @@ func TestParser_Parse(t *testing.T) {
 			consumers: []*Consumer{
 				{
 					Name:    "tester",
-					Package: func(*Package, *ast.Package) bool { return false },
+					Package: func(*Package, string) bool { return false },
 				},
 			},
 			packages: "./test/valid/...",
@@ -230,14 +231,14 @@ func TestParser_Parse(t *testing.T) {
 			consumers: []*Consumer{
 				{
 					Name:      "tester",
-					Package:   func(*Package, *ast.Package) bool { return true },
-					FilePre:   func(*File, *ast.File) bool { return true },
-					Import:    func(*File, *ast.ImportSpec) {},
-					Struct:    func(*Type, *ast.StructType) {},
-					Interface: func(*Type, *ast.InterfaceType) {},
-					FuncType:  func(*Type, *ast.FuncType) {},
-					FuncDecl:  func(*Func, *ast.FuncType, *ast.BlockStmt) {},
-					FilePost:  func(*File, *ast.File) error { return errors.New("file error") },
+					Package:   func(*Package, string) bool { return true },
+					FilePre:   func(*File, *goast.File) bool { return true },
+					Import:    func(*File, *goast.ImportSpec) {},
+					Struct:    func(*Type, *goast.StructType) {},
+					Interface: func(*Type, *goast.InterfaceType) {},
+					FuncType:  func(*Type, *goast.FuncType) {},
+					FuncDecl:  func(*Func, *goast.FuncType, *goast.BlockStmt) {},
+					FilePost:  func(*File, *goast.File) error { return errors.New("file error") },
 				},
 			},
 			packages:      "./test/valid/...",
@@ -245,54 +246,12 @@ func TestParser_Parse(t *testing.T) {
 			expectedError: "file error",
 		},
 		{
-			name: "FilePostFails_MergePackageFiles",
-			consumers: []*Consumer{
-				{
-					Name:      "tester",
-					Package:   func(*Package, *ast.Package) bool { return true },
-					FilePre:   func(*File, *ast.File) bool { return true },
-					Import:    func(*File, *ast.ImportSpec) {},
-					Struct:    func(*Type, *ast.StructType) {},
-					Interface: func(*Type, *ast.InterfaceType) {},
-					FuncType:  func(*Type, *ast.FuncType) {},
-					FuncDecl:  func(*Func, *ast.FuncType, *ast.BlockStmt) {},
-					FilePost:  func(*File, *ast.File) error { return errors.New("file error") },
-				},
-			},
-			packages: "./test/valid/...",
-			opts: ParseOptions{
-				MergePackageFiles: true,
-			},
-			expectedError: "file error",
-		},
-		{
-			name: "Success_MergePackageFiles",
-			consumers: []*Consumer{
-				{
-					Name:      "tester",
-					Package:   func(*Package, *ast.Package) bool { return true },
-					FilePre:   func(*File, *ast.File) bool { return true },
-					Import:    func(*File, *ast.ImportSpec) {},
-					Struct:    func(*Type, *ast.StructType) {},
-					Interface: func(*Type, *ast.InterfaceType) {},
-					FuncType:  func(*Type, *ast.FuncType) {},
-					FuncDecl:  func(*Func, *ast.FuncType, *ast.BlockStmt) {},
-					FilePost:  func(*File, *ast.File) error { return nil },
-				},
-			},
-			packages: "./test/valid/...",
-			opts: ParseOptions{
-				MergePackageFiles: true,
-			},
-			expectedError: "",
-		},
-		{
 			name: "Success_SkipTestFiles",
 			consumers: []*Consumer{
 				{
 					Name:    "tester",
-					Package: func(*Package, *ast.Package) bool { return true },
-					FilePre: func(*File, *ast.File) bool { return false },
+					Package: func(*Package, string) bool { return true },
+					FilePre: func(*File, *goast.File) bool { return false },
 				},
 			},
 			packages: "./test/valid/...",
@@ -306,14 +265,14 @@ func TestParser_Parse(t *testing.T) {
 			consumers: []*Consumer{
 				{
 					Name:      "tester",
-					Package:   func(*Package, *ast.Package) bool { return true },
-					FilePre:   func(*File, *ast.File) bool { return true },
-					Import:    func(*File, *ast.ImportSpec) {},
-					Struct:    func(*Type, *ast.StructType) {},
-					Interface: func(*Type, *ast.InterfaceType) {},
-					FuncType:  func(*Type, *ast.FuncType) {},
-					FuncDecl:  func(*Func, *ast.FuncType, *ast.BlockStmt) {},
-					FilePost:  func(*File, *ast.File) error { return nil },
+					Package:   func(*Package, string) bool { return true },
+					FilePre:   func(*File, *goast.File) bool { return true },
+					Import:    func(*File, *goast.ImportSpec) {},
+					Struct:    func(*Type, *goast.StructType) {},
+					Interface: func(*Type, *goast.InterfaceType) {},
+					FuncType:  func(*Type, *goast.FuncType) {},
+					FuncDecl:  func(*Func, *goast.FuncType, *goast.BlockStmt) {},
+					FilePost:  func(*File, *goast.File) error { return nil },
 				},
 			},
 			packages:      "./test/valid/...",

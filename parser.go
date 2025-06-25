@@ -1,3 +1,5 @@
+// Package parser provides functionality to parse Go source code files
+// and extract information about packages, types, and functions.
 package parser
 
 import (
@@ -158,7 +160,7 @@ func (p *parser) Parse(path string, opts ParseOptions) error {
 
 		entries, err := os.ReadDir(absDir)
 		if err != nil {
-			return fmt.Errorf("Error on reading directory %s: %s", absDir, err)
+			return fmt.Errorf("error on reading directory %s: %s", absDir, err)
 		}
 
 		// Parse all Go files in the current directory and build a map of package names to parsed files.

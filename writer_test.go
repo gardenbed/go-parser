@@ -85,9 +85,13 @@ func TestWriteFile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			err := WriteFile(tc.path, tc.fset, tc.file)
 
-			// Cleanup
-			defer os.Remove(tc.path)
-			defer os.Remove(getDebugFilename(tc.path))
+			defer func() {
+				_ = os.Remove(tc.path)
+			}()
+
+			defer func() {
+				_ = os.Remove(getDebugFilename(tc.path))
+			}()
 
 			if tc.expectedError == "" {
 				assert.NoError(t, err)
